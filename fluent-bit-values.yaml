@@ -1,0 +1,120 @@
+# Derived from https://github.com/helm/charts/tree/master/stable/fluent-bit
+image:
+  fluent_bit:
+    repository: fluent/fluent-bit
+    tag: 1.6.1
+  pullPolicy: IfNotPresent
+  # If specified, use these secrets to access the image
+  # pullSecrets:
+  #   - name: registry-secret
+
+# When enabled, exposes json and prometheus metrics on {{ .Release.Name }}-metrics service
+metrics:
+  enabled: true
+  service:
+    # labels:
+    #   key: value
+    annotations:
+      # In order for Prometheus to consume metrics automatically use the following annotations:
+      prometheus.io/path: "/api/v1/metrics/prometheus"
+      prometheus.io/port: "2020"
+      prometheus.io/scrape: "true"
+    port: 2020
+    type: ClusterIP
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      namespace: monitoring
+      interval: 30s
+      scrapeTimeout: 10s
+
+# When enabled, fluent-bit will keep track of tailing offsets across pod restarts.
+trackOffsets: true
+tolerations:
+  - operator: "Exists"
+backend:
+  type: es
+  es:
+    host: elasticsearch-master
+    port: 9200
+    # Elastic Index Name
+    index: kubernetes_cluster
+    type: flb_type
+    logstash_prefix: kubernetes_cluster
+    replace_dots: "On"
+    logstash_format: "On"
+    retry_limit: "False"
+    time_key: "@timestamp"
+    # Optional username credential for Elastic X-Pack access
+    http_user: elastic
+    # Password for user defined in HTTP_User
+    http_passwd:
+    # Optional TLS encryption to ElasticSearch instance
+    tls: "off"
+    tls_verify: "on"
+    # TLS certificate for the Elastic (in PEM format). Use if tls=on and tls_verify=on.
+    tls_ca: ""
+    # TLS debugging levels = 1-4
+    tls_debug: 1
+  stackdriver: {}
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: fluent-bit-sa
+
+rawConfig: |-
+  @INCLUDE fluent-bit-service.conf
+  @INCLUDE fluent-bit-input.conf
+  @INCLUDE fluent-bit-filter.conf
+  @INCLUDE fluent-bit-output.conf
+
+parsers:
+  enabled: true
+  ## List the respective parsers in key: value format per entry
+  ## Regex required fields are name and regex. JSON and Logfmt required field
+  ## is name.
+  regex:
+    - name: "apache"
+      regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
+      time_key: "time"
+      time_format: "%d/%b/%Y:%H:%M:%S %z"
+    - name: "apache2"
+      regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
+      timeKey: "time"
+      timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+    - name: "apache_error"
+      regex: '^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$'
+    - name: "nginx"
+      regex: '^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
+      timeKey: "time"
+      timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+    - name: "syslog"
+      regex: '^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$'
+      timeKey: "time"
+      timeFormat: "%b %d %H:%M:%S"
+    - name: "jenkins"
+      regex: '^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\+\d+\s\[id=(?<id>\d+)\]\s(?<level>\w+)\s(?<message>.*)$'
+      timeKey: "time"
+      timeFormat: "%Y-%m-%d %H:%M:%S.%L"
+
+  logfmt: []
+  ##  json parser config can be defined by providing an extraEntries field.
+  ##  The following entry:
+  ## json:
+  ##   - extraEntries: |
+  ##       Decode_Field_As  escaped log do_next
+  ##       Decode_Field_As  json log
+  ##
+  ##  translates into
+  ##
+  ##   Command       |  Decoder  | Field | Optional Action   |
+  ##   ==============|===========|=======|===================|
+  ##   Decode_Field_As  escaped   log  do_next
+  ##   Decode_Field_As  json log
+  ##
+  json: []
