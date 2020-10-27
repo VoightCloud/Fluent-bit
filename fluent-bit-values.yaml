@@ -2,7 +2,7 @@
 image:
   fluent_bit:
     repository: fluent/fluent-bit
-    tag: 1.6.1
+    tag: 1.6.2
   pullPolicy: IfNotPresent
   # If specified, use these secrets to access the image
   # pullSecrets:
@@ -30,8 +30,6 @@ metrics:
 
 # When enabled, fluent-bit will keep track of tailing offsets across pod restarts.
 trackOffsets: true
-tolerations:
-  - operator: "Exists"
 
 backend:
   type: es
@@ -47,62 +45,25 @@ backend:
     retry_limit: "False"
     time_key: "@timestamp"
     # Optional username credential for Elastic X-Pack access
-    http_user: elastic
+    http_user:
     # Password for user defined in HTTP_User
     http_passwd:
     # Optional TLS encryption to ElasticSearch instance
     tls: "off"
-    tls_verify: "on"
+    tls_verify: "off"
     # TLS certificate for the Elastic (in PEM format). Use if tls=on and tls_verify=on.
     tls_ca: ""
     # TLS debugging levels = 1-4
     tls_debug: 1
   stackdriver: {}
 
-serviceAccount:
-  # Specifies whether a ServiceAccount should be created
-  create: false
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the ServiceAccount to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: fluent-bit-sa
-
-rawConfig: |-
-  @INCLUDE fluent-bit-service.conf
-  @INCLUDE fluent-bit-input.conf
-  @INCLUDE fluent-bit-filter.conf
-  @INCLUDE fluent-bit-output.conf
 
 parsers:
-  enabled: true
+  enabled: false
   ## List the respective parsers in key: value format per entry
   ## Regex required fields are name and regex. JSON and Logfmt required field
   ## is name.
-  regex:
-    - name: "apache"
-      regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
-      time_key: "time"
-      time_format: "%d/%b/%Y:%H:%M:%S %z"
-    - name: "apache2"
-      regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
-      timeKey: "time"
-      timeFormat: "%d/%b/%Y:%H:%M:%S %z"
-    - name: "apache_error"
-      regex: '^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$'
-    - name: "nginx"
-      regex: '^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
-      timeKey: "time"
-      timeFormat: "%d/%b/%Y:%H:%M:%S %z"
-    - name: "syslog"
-      regex: '^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$'
-      timeKey: "time"
-      timeFormat: "%b %d %H:%M:%S"
-    - name: "jenkins"
-      regex: '^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\+\d+\s\[id=(?<id>\d+)\]\s(?<level>\w+)\s(?<message>.*)$'
-      timeKey: "time"
-      timeFormat: "%Y-%m-%d %H:%M:%S.%L"
-
+  regex: []
   logfmt: []
   ##  json parser config can be defined by providing an extraEntries field.
   ##  The following entry:
@@ -119,3 +80,223 @@ parsers:
   ##   Decode_Field_As  json log
   ##
   json: []
+
+env: []
+
+## Annotations to add to the DaemonSet's Pods
+podAnnotations: {}
+
+## By default there different 'files' provides in the config
+## (fluent-bit.conf, custom_parsers.conf). This defeats
+## changing a configmap (since it uses subPath). If this
+## variable is set, the user is assumed to have provided,
+## in 'existingConfigMap' the entire config (etc/*) of fluent-bit,
+## parsers and system config. In this case, no subPath is
+## used
+fullConfigMap: false
+
+## ConfigMap override where fullname is {{.Release.Name}}-{{.Values.existingConfigMap}}
+## Defining existingConfigMap will cause templates/config.yaml
+## to NOT generate a ConfigMap resource
+##
+existingConfigMap: ""
+
+
+# NOTE If you want to add extra sections, add them here, inbetween the includes,
+# wherever they need to go. Sections order matters.
+
+rawConfig: |-
+  @INCLUDE fluent-bit-service.conf
+  @INCLUDE fluent-bit-input.conf
+  @INCLUDE fluent-bit-filter.conf
+  @INCLUDE fluent-bit-output.conf
+
+
+# WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# This is to add extra entries to an existing section, NOT for adding new sections
+# Do not submit bugs against indent being wrong. Add your new sections to rawConfig
+# instead.
+#
+extraEntries:
+  input: |-
+  #     # >=1 additional Key/Value entrie(s) for existing Input section
+  audit: |-
+  #     # >=1 additional Key/Value entrie(s) for existing Input section
+  filter: |-
+  #     # >=1 additional Key/Value entrie(s) for existing Filter section
+  output: |-
+  #     # >=1 additional Key/Value entrie(s) for existing Ouput section
+  service: |-
+  #     # >=1 additional Key/Value entrie(s) for existing Service section
+# WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+## Extra ports to add to the daemonset ports section
+extraPorts: []
+
+## Extra volumes containing additional files required for fluent-bit to work
+## (eg. CA certificates)
+## Ref: https://kubernetes.io/docs/concepts/storage/volumes/
+##
+extraVolumes: []
+
+## Extra volume mounts for the fluent-bit pod.
+## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-volume-storage/
+##
+extraVolumeMounts: []
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 10m
+#   memory: 8Mi
+
+# When enabled, pods will bind to the node's network namespace.
+hostNetwork: false
+
+# Which DNS policy to use for the pod.
+# Consider switching to 'ClusterFirstWithHostNet' when 'hostNetwork' is enabled.
+dnsPolicy: ClusterFirst
+
+# Optional field that allows more control on the DNS settings for the pod.
+# Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-config
+dnsConfig: {}
+  # nameservers:
+  #   - 1.2.3.4
+  # searches:
+  #   - ns1.svc.cluster-domain.example
+  #   - my.dns.search.suffix
+  # options:
+  #   - name: ndots
+  #     value: "2"
+#   - name: edns0
+
+## Node tolerations for fluent-bit scheduling to nodes with taints
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+##
+tolerations:
+  - operator: "Exists"
+# - key: "key"
+#  operator: "Equal|Exists"
+#  value: "value"
+#  effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+
+## Node labels for fluent-bit pod assignment
+## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+##
+nodeSelector: {}
+affinity: {}
+
+service:
+  flush: 1
+  logLevel: info
+
+input:
+  tail:
+    memBufLimit: 5MB
+    parser: docker
+    path: /var/log/containers/*.log
+    ignore_older: ""
+    dockerMode: false
+    dockerModeFlush: 4
+    exclude_path: ""
+  systemd:
+    enabled: false
+    filters:
+      systemdUnit:
+        - docker.service
+        - kubelet.service
+        - node-problem-detector.service
+    maxEntries: 1000
+    readFromTail: true
+    stripUnderscores: false
+    tag: host.*
+
+audit:
+  enable: false
+  input:
+    memBufLimit: 35MB
+    parser: docker
+    tag: audit.*
+    path: /var/log/kube-apiserver-audit.log
+    bufferChunkSize: 2MB
+    bufferMaxSize: 10MB
+    skipLongLines: On
+    key: kubernetes-audit
+
+filter:
+  kubeURL: https://kubernetes.default.svc:443
+  kubeCAFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  kubeTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  kubeTag: kube
+  kubeTagPrefix: kube.var.log.containers.
+
+  # If true, check to see if the log field content is a JSON string map, if so,
+  # it append the map fields as part of the log structure.
+  mergeJSONLog: true
+
+  # If set, all unpacked keys from mergeJSONLog (Merge_Log) will be packed under
+  # the key name specified on mergeLogKey (Merge_Log_Key)
+  mergeLogKey: ""
+
+  # If true, enable the use of monitoring for a pod annotation of
+  # fluentbit.io/parser: parser_name. parser_name must be the name
+  # of a parser contained within parsers.conf
+  enableParser: true
+
+  # If true, enable the use of monitoring for a pod annotation of
+  # fluentbit.io/exclude: true. If present, discard logs from that pod.
+  enableExclude: true
+
+  # If true, the filter reads logs coming in Journald format.
+  useJournal: false
+
+rbac:
+  # Specifies whether RBAC resources should be created
+  create: true
+  # Specifies whether a PodSecurityPolicy should be created
+  pspEnabled: false
+
+taildb:
+  directory: /var/lib/fluent-bit
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+## Specifies security settings for a container
+## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+securityContext: {}
+  # securityContext:
+#   privileged: true
+
+## Specifies security settings for a pod
+## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+podSecurityContext: {}
+  # podSecurityContext:
+#   runAsUser: 1000
+
+## Add your own init container (example installation of Lua filter plugin)
+## Ref: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+initContainers: {}
+  # load-plugin:
+  #   image: "appropriate/curl:latest"
+  #   imagePullPolicy: "IfNotPresent"
+  #   # Assumed plugins volume is configured at Pod level via extraVolumes
+  #   volumeMounts:
+  #     - name: plugins
+  #       mountPath: /fluent-bit/plugins
+  #   command:
+  #     - "/bin/sh"
+  #     - "-c"
+  #     - |
+  #       curl -sS <download-url> -o /plugin.zip
+  #       unzip /plugin.zip
+#       cp -av <plugin-zip-contents> /fluent-bit/plugins/
