@@ -32,6 +32,7 @@ metrics:
 trackOffsets: true
 tolerations:
   - operator: "Exists"
+
 backend:
   type: es
   es:
