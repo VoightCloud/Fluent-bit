@@ -1,0 +1,45 @@
+# You would run this on the Kubernetes Control Plane
+# Important: Run this first!
+
+- name: Initialize Kubernetes Control Plane
+  hosts: controlplane
+  vars_files:
+    - files/fluent-bit-vault.yaml
+
+  tasks:
+    - name: Install Openshift Python Library
+      command: pip3 install openshift
+
+    - name: Install Ansible
+      become: true
+      apt:
+        name: ansible
+        state: present
+        update_cache: yes
+
+    - name: Install Ansible Galaxy Kubernetes
+      command: ansible-galaxy collection install community.kubernetes
+
+    - name: Create monitoring namespace
+      community.kubernetes.k8s:
+        name: monitoring
+        api_version: v1
+        kind: namespace
+        state: present
+
+    - name: Copy Helm Charts
+      copy:
+        src: ../fluent-bit
+        dest: ~/
+
+    - name: Copy Customization
+      copy:
+        src: ../fluent-bit-values.yaml
+        dest: ~/
+
+    - name: Apply Fluent-bit chart
+      command: >
+        helm upgrade fluent-bit -n monitoring /home/ubuntu/fluent-bit -f /home/ubuntu/fluent-bit-values.yaml
+        --set backend.es.http_passwd='{{ elasticsearchpassword }}'
+        --set backend.es.http_user='{{ elasticsearchuser }}'
+

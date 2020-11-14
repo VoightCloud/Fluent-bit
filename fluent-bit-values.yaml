@@ -70,7 +70,7 @@ parsers:
       timeFormat: "%Y-%m-%d %H:%M:%S.%L"
 
     - name: "nextcloud"
-      regex: '^(?<remote>[^ ]*)\s+-\s+-\s+\[(?<time>[^\]]*)\]\s+\\"(?<method>\S+)\s+(?<path>[^\ ]*?)\s+(?<protocol>\S+[^\\])\\"\s+(?<status>\d+)\s+(?<length>\d+)\s+\\"-\\"\s+\\"(?<operation>\S+[^\\"])\\".*$'
+      regex: '^(?<remote>[^ ]*)\s+-\s+-\s+\[(?<time>[^\]]*)\]\s+\\"(?<method>\S+)\s+(?<path>[^\ ]*?)\s+(?<protocol>\S+[^\\])\\"\s+(?<status>\d+)\s+(?<length>\d+)\s+\\"-\\"\s+\\"(?<operation>.+[^\\"])\\".*$'
       timeKey: "time"
       timeFormat: "%d/%b/%Y:%H:%M:%S %z"
 
@@ -104,6 +104,11 @@ parsers:
       timeKey: "time"
       timeFormat: "%H:%M:%S.%z"
 
+    - name: "syslog"
+      regex: '^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$'
+      timeKey: "time"
+      timeFormat: "%b %d %H:%M:%S"
+
   logfmt: []
   ##  json parser config can be defined by providing an extraEntries field.
   ##  The following entry:
@@ -119,7 +124,15 @@ parsers:
   ##   Decode_Field_As  escaped   log  do_next
   ##   Decode_Field_As  json log
   ##
-  json: []
+  json:
+    - name: "docker"
+      timeKey: "time"
+      timeFormat: "%Y-%m-%dT%H:%M:%S.%L"
+      timeKeep: "On"
+
+    - name: "json"
+      timeKey: "time"
+      timeFormat: "%d/%b/%Y:%H:%M:%S %z"
 
 env: []
 

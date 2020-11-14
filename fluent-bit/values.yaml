@@ -262,7 +262,7 @@ input:
     dockerMode: false
     dockerModeFlush: 4
     exclude_path: ""
-    multiline: true
+#    multiline: true
   systemd:
     enabled: false
     filters:

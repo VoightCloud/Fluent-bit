@@ -15,9 +15,6 @@ data:
         Daemon       Off
         Log_Level    {{ .Values.service.logLevel }}
         Parsers_File parsers.conf
-{{- if .Values.parsers.enabled }}
-        Parsers_File parsers_custom.conf
-{{- end }}
 {{- if .Values.metrics.enabled }}
         HTTP_Server  On
         HTTP_Listen  0.0.0.0
@@ -29,7 +26,6 @@ data:
     [INPUT]
         Name              tail
         Path              {{ .Values.input.tail.path }}
-        Parser            {{ .Values.input.tail.parser }}
         Tag               {{ .Values.filter.kubeTag }}.*
         Refresh_Interval  5
         Mem_Buf_Limit     {{ .Values.input.tail.memBufLimit }}
@@ -51,6 +47,9 @@ data:
 {{- if .Values.input.tail.multiline }}
         Multiline         On
         Parser_Firstline  log_date
+        Parser_1          {{ .Values.input.tail.parser }}
+{{- else }}
+        Parser            {{ .Values.input.tail.parser }}
 {{- end }}
 {{- if .Values.input.systemd.enabled }}
     [INPUT]
@@ -235,7 +234,7 @@ data:
     [PARSER]
         Name        log_date
         Format      regex
-        Regex       /^\d{4}-\d{1,2}-\d{1,2}/
+        Regex       '^\w.*Exception.*$'
 {{- end}}
 {{- range .Values.parsers.regex }}
     [PARSER]
