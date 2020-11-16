@@ -21,7 +21,7 @@
 
     - name: Create monitoring namespace
       community.kubernetes.k8s:
-        name: {{ namespace }}
+        name: '{{ namespace }}'
         api_version: v1
         kind: namespace
         state: present
@@ -38,7 +38,7 @@
 
     - name: Apply Fluent-bit chart
       command: >
-        helm install fluent-bit -n {{ namespace }} /tmp/fluent-bit -f /tmp/fluent-bit-values.yaml
+        helm install fluent-bit -n '{{ namespace }}' /tmp/fluent-bit -f /tmp/fluent-bit-values.yaml
         --set backend.es.http_passwd='{{ elasticsearchpassword }}'
         --set backend.es.http_user='{{ elasticsearchuser }}'
 

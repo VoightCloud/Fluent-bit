@@ -26,5 +26,5 @@ However, you are more than welcome to create your own credentials.
 Simply look in the vars.yaml file and create your own credentials as follows:
 ```shell script
 echo 'YourVeryStrongPassword' > ~/vaultpass
-ansible-vault encrypt_string --vault-password-file=~/vaultpass "StringToEncrypt" --name="NameOfCredential"
+ansible-vault encrypt_string --vault-password-file=~/vaultpwd "StringToEncrypt" --name="NameOfCredential"
 ```
