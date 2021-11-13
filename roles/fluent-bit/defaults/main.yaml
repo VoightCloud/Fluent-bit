@@ -107,7 +107,7 @@ inputs: |
 
   [INPUT]
       name tail
-      path /var/log/messages
+      path /var/log/syslog
       tag logs.local
 
 filters: |
