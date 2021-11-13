@@ -1,0 +1,9 @@
+- name: Install Fluent-bit
+  hosts: localhost
+  connection: local
+
+  vars:
+    namespace: monitoring
+
+  roles:
+    - fluent-bit

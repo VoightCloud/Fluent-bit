@@ -1,4 +1,9 @@
 # Derived from https://github.com/helm/charts/tree/master/stable/fluent-bit
+
+# Minikube stores its logs in a separate directory.
+# Enable if you install the chart in minikube.
+on_minikube: false
+
 image:
   fluent_bit:
     repository: fluent/fluent-bit
@@ -7,6 +12,27 @@ image:
   # If specified, use these secrets to access the image
   # pullSecrets:
   #   - name: registry-secret
+
+testFramework:
+  # When enabled, performs helm tests
+  enabled: false
+  image: "dduportal/bats"
+  tag: "0.4.0"
+  # If specified, use these secrets to access the image
+  # pullSecrets:
+  #   - name: registry-secret
+  # Backend test image when backend.type == "es"
+  curlJq:
+    image: dwdraju/alpine-curl-jq
+    tag: latest
+  # Backend test image when backend.type == "forward"
+  # NOTE image runs as root user
+  fluentd:
+    image: fluent/fluentd
+    tag: v1.4-debian-1
+
+nameOverride: ""
+fullnameOverride: ""
 
 # When enabled, exposes json and prometheus metrics on {{ .Release.Name }}-metrics service
 metrics:
@@ -29,10 +55,21 @@ metrics:
       scrapeTimeout: 10s
 
 # When enabled, fluent-bit will keep track of tailing offsets across pod restarts.
-trackOffsets: true
+trackOffsets: false
+
+## PriorityClassName
+## Ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+priorityClassName: ""
 
 backend:
   type: es
+  forward:
+    host: fluentd
+    port: 24284
+    tls: "off"
+    tls_verify: "on"
+    tls_debug: 1
+    shared_key:
   es:
     host: elasticsearch-master
     port: 9200
@@ -55,8 +92,34 @@ backend:
     tls_ca: ""
     # TLS debugging levels = 1-4
     tls_debug: 1
+  splunk:
+    host: 127.0.0.1
+    port: 8088
+    token: ""
+    send_raw: "on"
+    tls: "on"
+    tls_verify: "off"
+    tls_debug: 1
+    message_key: "kubernetes"
   stackdriver: {}
 
+  ##
+  ## Ref: http://fluentbit.io/documentation/current/output/http.html
+  ##
+  http:
+    host: 127.0.0.1
+    port: 80
+    uri: "/"
+    http_user:
+    http_passwd:
+    tls: "off"
+    tls_verify: "on"
+    tls_debug: 1
+    ## Specify the data format to be used in the HTTP request body
+    ## Can be either 'msgpack' or 'json'
+    format: msgpack
+    # json_date_format: double or iso8601
+    headers: []
 
 parsers:
   enabled: true
@@ -172,15 +235,15 @@ rawConfig: |-
 #
 extraEntries:
   input: |-
-  #     # >=1 additional Key/Value entrie(s) for existing Input section
+#     # >=1 additional Key/Value entrie(s) for existing Input section
   audit: |-
-  #     # >=1 additional Key/Value entrie(s) for existing Input section
+#     # >=1 additional Key/Value entrie(s) for existing Input section
   filter: |-
-  #     # >=1 additional Key/Value entrie(s) for existing Filter section
+#     # >=1 additional Key/Value entrie(s) for existing Filter section
   output: |-
-  #     # >=1 additional Key/Value entrie(s) for existing Ouput section
+#     # >=1 additional Key/Value entrie(s) for existing Ouput section
   service: |-
-  #     # >=1 additional Key/Value entrie(s) for existing Service section
+#     # >=1 additional Key/Value entrie(s) for existing Service section
 # WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -204,7 +267,7 @@ resources: {}
   #   memory: 128Mi
   # requests:
   #   cpu: 10m
-#   memory: 8Mi
+  #   memory: 8Mi
 
 # When enabled, pods will bind to the node's network namespace.
 hostNetwork: false
@@ -224,13 +287,12 @@ dnsConfig: {}
   # options:
   #   - name: ndots
   #     value: "2"
-#   - name: edns0
+  #   - name: edns0
 
 ## Node tolerations for fluent-bit scheduling to nodes with taints
 ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 ##
-tolerations:
-  - operator: "Exists"
+tolerations: []
 # - key: "key"
 #  operator: "Equal|Exists"
 #  value: "value"
@@ -286,24 +348,24 @@ filter:
   kubeTag: kube
   kubeTagPrefix: kube.var.log.containers.
 
-  # If true, check to see if the log field content is a JSON string map, if so,
-  # it append the map fields as part of the log structure.
+# If true, check to see if the log field content is a JSON string map, if so,
+# it append the map fields as part of the log structure.
   mergeJSONLog: true
 
-  # If set, all unpacked keys from mergeJSONLog (Merge_Log) will be packed under
-  # the key name specified on mergeLogKey (Merge_Log_Key)
+# If set, all unpacked keys from mergeJSONLog (Merge_Log) will be packed under
+# the key name specified on mergeLogKey (Merge_Log_Key)
   mergeLogKey: ""
 
-  # If true, enable the use of monitoring for a pod annotation of
-  # fluentbit.io/parser: parser_name. parser_name must be the name
-  # of a parser contained within parsers.conf
+# If true, enable the use of monitoring for a pod annotation of
+# fluentbit.io/parser: parser_name. parser_name must be the name
+# of a parser contained within parsers.conf
   enableParser: true
 
-  # If true, enable the use of monitoring for a pod annotation of
-  # fluentbit.io/exclude: true. If present, discard logs from that pod.
+# If true, enable the use of monitoring for a pod annotation of
+# fluentbit.io/exclude: true. If present, discard logs from that pod.
   enableExclude: true
 
-  # If true, the filter reads logs coming in Journald format.
+# If true, the filter reads logs coming in Journald format.
   useJournal: false
 
 rbac:
@@ -328,13 +390,13 @@ serviceAccount:
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
 securityContext: {}
   # securityContext:
-#   privileged: true
+  #   privileged: true
 
 ## Specifies security settings for a pod
 ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
 podSecurityContext: {}
   # podSecurityContext:
-#   runAsUser: 1000
+  #   runAsUser: 1000
 
 ## Add your own init container (example installation of Lua filter plugin)
 ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
@@ -352,4 +414,4 @@ initContainers: {}
   #     - |
   #       curl -sS <download-url> -o /plugin.zip
   #       unzip /plugin.zip
-#       cp -av <plugin-zip-contents> /fluent-bit/plugins/
+  #       cp -av <plugin-zip-contents> /fluent-bit/plugins/

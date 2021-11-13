@@ -1,0 +1,74 @@
+namespace: monitoring
+
+deployment: fluent-bit
+
+parsers:
+  - name: "jenkins"
+    regex: '^(?<time>.*[^\[])\s+\[id=(?<id>\d+)\]\s+(?<level>\w+)\s+(?<message>.*)$'
+    timeKey: "time"
+    timeFormat: "%Y-%m-%d %H:%M:%S.%L"
+
+  - name: "nextcloud"
+    regex: '^(?<remote>[^ ]*)\s+-\s+-\s+\[(?<time>[^\]]*)\]\s+\\"(?<method>\S+)\s+(?<path>[^\ ]*?)\s+(?<protocol>\S+[^\\])\\"\s+(?<status>\d+)\s+(?<length>\d+)\s+\\"-\\"\s+\\"(?<operation>.+[^\\"])\\".*$'
+    timeKey: "time"
+    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+
+  - name: "sonarqube"
+    regex: '^(?<time>[\d|\.|\s|:]+) (?<level>\w+)\s+(?<logType>\S+)\[(?<uid>\S+[^\]])]\[(?<message>\S+[^\]])]\s+(?<task>.*[^\|])\|\s+project=(?<project>.*[^\|])\|\s+type=(?<type>\w+[^\|])\|\s+id=(?<id>\S+[^\|])\|\s+submitter=(?<submitter>\S+[^\|])\|\s+status=(?<status>.*[^\|])\|\s+time=(?<duration>\d+ms).*$'
+    timeKey: "time"
+    timeFormat: "%Y.%m.%d %H:%M:%S"
+
+  - name: "apache"
+    regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
+    timeKey: "time"
+    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+
+  - name: "apache2"
+    regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
+    timeKey: "time"
+    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+
+  - name: "apache_error"
+    regex: '^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$'
+    timeKey: "time"
+    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+
+  - name: "nginx"
+    regex: '^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
+    timeKey: "time"
+    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+
+  - name: "selenium"
+    regex: '^(?<time>[\d|\.|\s|:]+) (?<level>\w+[^\[])\s+\[(?<type>.*[^\]])]\s+-\s+(?<message>.*)'
+    timeKey: "time"
+    timeFormat: "%H:%M:%S.%z"
+
+  - name: "syslog"
+    regex: '^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$'
+    timeKey: "time"
+    timeFormat: "%b %d %H:%M:%S"
+
+json:
+  - name: "docker"
+    timeKey: "time"
+    timeFormat: "%Y-%m-%dT%H:%M:%S.%L"
+    timeKeep: "On"
+
+  - name: "json"
+    timeKey: "time"
+    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+
+elasticsearchuser: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  61636130613662613635366162376631363037303066333266303731633265303932666365393639
+  3238623263363732626365326466626534666634363261640a663865636230393933386530306537
+  31313739373833353761626663326534343065356337306361346535386433646232343161326639
+  3539346434646530620a366661366561323734336366383131373464323834386333326438666530
+  3864
+elasticsearchpassword: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  30383930373834616635623630363231393463346235613062373061366438326165336536653766
+  6562343332653837323966643966393034653363353166300a666434386464633365626331663034
+  38626136363134363436373861326637633638303764343963363639393836383761346631323431
+  3835653465316234610a626231666564313337663136376531343534363263623032363561633033
+  6536
