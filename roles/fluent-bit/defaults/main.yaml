@@ -2,93 +2,178 @@ namespace: monitoring
 
 deployment: fluent-bit
 
-parsers:
-  - name: "jenkins"
-    regex: '^(?<time>.*[^\[])\s+\[id=(?<id>\d+)\]\s+(?<level>\w+)\s+(?<message>.*)$'
-    timeKey: "time"
-    timeFormat: "%Y-%m-%d %H:%M:%S.%L"
+customParsers: |
+  [PARSER]
+      Name        docker
+      Format      json
+      Time_Keep   On
+      Time_Key    time
+      Time_Format %Y-%m-%dT%H:%M:%S.%L
 
-  - name: "nextcloud"
-    regex: '^(?<remote>[^ ]*)\s+-\s+-\s+\[(?<time>[^\]]*)\]\s+\\"(?<method>\S+)\s+(?<path>[^\ ]*?)\s+(?<protocol>\S+[^\\])\\"\s+(?<status>\d+)\s+(?<length>\d+)\s+\\"-\\"\s+\\"(?<operation>.+[^\\"])\\".*$'
-    timeKey: "time"
-    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+  [PARSER]
+      Name        jenkins
+      Format      regex
+      Regex       ^(?<time>.*[^\[])\s+\[id=(?<id>\d+)\]\s+(?<level>\w+)\s+(?<message>.*)$
+      Time_Key    time
+      Time_Format %Y-%m-%d %H:%M:%S.%L
 
-  - name: "sonarqube"
-    regex: '^(?<time>[\d|\.|\s|:]+) (?<level>\w+)\s+(?<logType>\S+)\[(?<uid>\S+[^\]])]\[(?<message>\S+[^\]])]\s+(?<task>.*[^\|])\|\s+project=(?<project>.*[^\|])\|\s+type=(?<type>\w+[^\|])\|\s+id=(?<id>\S+[^\|])\|\s+submitter=(?<submitter>\S+[^\|])\|\s+status=(?<status>.*[^\|])\|\s+time=(?<duration>\d+ms).*$'
-    timeKey: "time"
-    timeFormat: "%Y.%m.%d %H:%M:%S"
+  [PARSER]
+      Name        nextcloud
+      Format      regex
+      Regex       ^(?<remote>[^ ]*)\s+-\s+-\s+\[(?<time>[^\]]*)\]\s+\\"(?<method>\S+)\s+(?<path>[^\ ]*?)\s+(?<protocol>\S+[^\\])\\"\s+(?<status>\d+)\s+(?<length>\d+)\s+\\"-\\"\s+\\"(?<operation>.+[^\\"])\\".*$
+      Time_Key    time
+      Time_Format %d/%b/%Y:%H:%M:%S %z
 
-  - name: "apache"
-    regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
-    timeKey: "time"
-    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+  [PARSER]
+      Name        sonarqube
+      Format      regex
+      Regex       ^(?<time>[\d|\.|\s|:]+) (?<level>\w+)\s+(?<logType>\S+)\[(?<uid>\S+[^\]])]\[(?<message>\S+[^\]])]\s+(?<task>.*[^\|])\|\s+project=(?<project>.*[^\|])\|\s+type=(?<type>\w+[^\|])\|\s+id=(?<id>\S+[^\|])\|\s+submitter=(?<submitter>\S+[^\|])\|\s+status=(?<status>.*[^\|])\|\s+time=(?<duration>\d+ms).*$
+      Time_Key    time
+      Time_Format %Y.%m.%d %H:%M:%S
 
-  - name: "apache2"
-    regex: '^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
-    timeKey: "time"
-    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+  [PARSER]
+      Name        apache
+      Format      regex
+      Regex       ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
+      Time_Key    time
+      Time_Format %d/%b/%Y:%H:%M:%S %z
 
-  - name: "apache_error"
-    regex: '^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$'
-    timeKey: "time"
-    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+  [PARSER]
+      Name        apache2
+      Format      regex
+      Regex       ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
+      Time_Key    time
+      Time_Format %d/%b/%Y:%H:%M:%S %z
 
-  - name: "nginx"
-    regex: '^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$'
-    timeKey: "time"
-    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+  [PARSER]
+      Name        apache_error
+      Format      regex
+      Regex       ^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$
+      Time_Key    time
+      Time_Format %d/%b/%Y:%H:%M:%S %z
 
-  - name: "selenium"
-    regex: '^(?<time>[\d|\.|\s|:]+) (?<level>\w+[^\[])\s+\[(?<type>.*[^\]])]\s+-\s+(?<message>.*)'
-    timeKey: "time"
-    timeFormat: "%H:%M:%S.%z"
+  [PARSER]
+      Name        nginx
+      Format      regex
+      Regex       ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
+      Time_Key    time
+      Time_Format %d/%b/%Y:%H:%M:%S %z
 
-  - name: "syslog"
-    regex: '^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$'
-    timeKey: "time"
-    timeFormat: "%b %d %H:%M:%S"
+  [PARSER]
+      Name        selenium
+      Format      regex
+      Regex       ^(?<time>[\d|\.|\s|:]+) (?<level>\w+[^\[])\s+\[(?<type>.*[^\]])]\s+-\s+(?<message>.*)
+      Time_Key    time
+      Time_Format %H:%M:%S.%z
 
-json:
-  - name: "docker"
-    timeKey: "time"
-    timeFormat: "%Y-%m-%dT%H:%M:%S.%L"
-    timeKeep: "On"
+  [PARSER]
+      Name        syslog
+      Format      regex
+      Regex       ^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
+      Time_Key    time
+      Time_Format %b %d %H:%M:%S
 
-  - name: "json"
-    timeKey: "time"
-    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+  [PARSER]
+      Name        json
+      Format      json
+      Time_Key    time
+      Time_Format %d/%b/%Y:%H:%M:%S %z
 
-input: |-
-  [ INPUT ]
-    name cpu
-    tag  cpu.local
-    interval_sec 5
 
-  [ INPUT ]
-    name mem
-    tag mem.local
-    interval_sec 5
+inputs: |
+  [INPUT]
+      Name tail
+      Path /var/log/containers/*.log
+      multiline.parser docker, cri
+      Tag kube.*
+      Mem_Buf_Limit 5MB
+      Skip_Long_Lines On
 
-  [ INPUT ]
-    name tail
-    path /var/log/messages
-    tag logs.local
+  [INPUT]
+      Name systemd
+      Tag host.*
+      Systemd_Filter _SYSTEMD_UNIT=kubelet.service
+      Read_From_Tail On
 
-  [ FILTER ]
-    name modify
-    match cpu*
-    Remove_regex cpu\d+.*
-    Add hostname ${HOSTNAME}
+  [INPUT]
+      name cpu
+      tag  cpu.local
+      interval_sec 5
 
-  [ FILTER ]
-    name modify
-    match mem*
-    Add hostname ${HOSTNAME}
+  [INPUT]
+      name mem
+      tag mem.local
+      interval_sec 5
 
-  [ FILTER ]
-    name modify
-    match logs*
-    Add hostname ${HOSTNAME}
+  [INPUT]
+      name tail
+      path /var/log/messages
+      tag logs.local
+
+filters: |
+  [FILTER]
+      Name kubernetes
+      Match kube.*
+      Merge_Log On
+      Keep_Log Off
+      K8S-Logging.Parser On
+      K8S-Logging.Exclude On
+
+  [FILTER]
+      name modify
+      match cpu*
+      Remove_regex cpu\d+.*
+      Add hostname ${MY_NODE_NAME}
+
+  [FILTER]
+      name modify
+      match mem*
+      Add hostname ${MY_NODE_NAME}
+
+  [FILTER]
+      name modify
+      match logs*
+      Add hostname ${MY_NODE_NAME}
+
+outputs: |
+  [OUTPUT]
+      Name es
+      Match kube.*
+      Host elasticsearch-master
+      Logstash_Format On
+      Retry_Limit False
+      Type  flb_type
+      Time_Key @timestamp
+      Replace_Dots On
+      Logstash_Prefix kubernetes_cluster
+      HTTP_User "{{ elasticsearchuser }}"
+      HTTP_Passwd "{{ elasticsearchpassword }}"
+
+  [OUTPUT]
+      Name es
+      Match cpu.*
+      Host elasticsearch-master
+      Logstash_Format On
+      Retry_Limit False
+      Type  flb_type
+      Time_Key @timestamp
+      Replace_Dots On
+      Logstash_Prefix cpu
+      HTTP_User "{{ elasticsearchuser }}"
+      HTTP_Passwd "{{ elasticsearchpassword }}"
+
+  [OUTPUT]
+      Name es
+      Match mem.*
+      Host elasticsearch-master
+      Logstash_Format On
+      Retry_Limit False
+      Type  flb_type
+      Time_Key @timestamp
+      Replace_Dots On
+      Logstash_Prefix cpu
+      HTTP_User "{{ elasticsearchuser }}"
+      HTTP_Passwd "{{ elasticsearchpassword }}"
 
 elasticsearchuser: !vault |
   $ANSIBLE_VAULT;1.1;AES256
