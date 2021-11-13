@@ -98,12 +98,12 @@ inputs: |
   [INPUT]
       name cpu
       tag  cpu.local
-      interval_sec 5
+      interval_sec 30
 
   [INPUT]
       name mem
       tag mem.local
-      interval_sec 5
+      interval_sec 30
 
   [INPUT]
       name tail
@@ -165,6 +165,19 @@ outputs: |
   [OUTPUT]
       Name es
       Match mem.*
+      Host elasticsearch-master
+      Logstash_Format On
+      Retry_Limit False
+      Type  flb_type
+      Time_Key @timestamp
+      Replace_Dots On
+      Logstash_Prefix cpu
+      HTTP_User "{{ elasticsearchuser }}"
+      HTTP_Passwd "{{ elasticsearchpassword }}"
+
+  [OUTPUT]
+      Name es
+      Match log.*
       Host elasticsearch-master
       Logstash_Format On
       Retry_Limit False
