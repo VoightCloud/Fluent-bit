@@ -235,7 +235,38 @@ rawConfig: |-
 #
 extraEntries:
   input: |-
-#     # >=1 additional Key/Value entrie(s) for existing Input section
+    [INPUT]
+        name cpu
+        tag  cpu.local
+        interval_sec 5
+
+    [INPUT]
+        name mem
+        tag mem.local
+        interval_sec 5
+
+    [INPUT]
+        name tail
+        path /var/log/messages
+        tag logs.local
+
+    [FILTER]
+        name modify
+        match cpu*
+        Remove_regex cpu\d+.*
+        Add hostname ${HOSTNAME}
+
+    [FILTER]
+        name modify
+        match mem*
+        Add hostname ${HOSTNAME}
+
+    [FILTER]
+        name modify
+        match logs*
+        Add hostname ${HOSTNAME}
+
+  #     # >=1 additional Key/Value entrie(s) for existing Input section
   audit: |-
 #     # >=1 additional Key/Value entrie(s) for existing Input section
   filter: |-

@@ -54,3 +54,5 @@
         enabled: true
         regex: "{{ parsers }}"
         json: "{{ json }}"
+      extraEntries:
+        input: "{{ input }}"

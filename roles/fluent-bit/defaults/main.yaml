@@ -58,6 +58,38 @@ json:
     timeKey: "time"
     timeFormat: "%d/%b/%Y:%H:%M:%S %z"
 
+input: |-
+  [ INPUT ]
+    name cpu
+    tag  cpu.local
+    interval_sec 5
+
+  [ INPUT ]
+    name mem
+    tag mem.local
+    interval_sec 5
+
+  [ INPUT ]
+    name tail
+    path /var/log/messages
+    tag logs.local
+
+  [ FILTER ]
+    name modify
+    match cpu*
+    Remove_regex cpu\d+.*
+    Add hostname ${HOSTNAME}
+
+  [ FILTER ]
+    name modify
+    match mem*
+    Add hostname ${HOSTNAME}
+
+  [ FILTER ]
+    name modify
+    match logs*
+    Add hostname ${HOSTNAME}
+
 elasticsearchuser: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   61636130613662613635366162376631363037303066333266303731633265303932666365393639
