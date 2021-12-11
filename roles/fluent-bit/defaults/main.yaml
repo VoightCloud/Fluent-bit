@@ -4,89 +4,49 @@ deployment: fluent-bit
 
 customParsers: |
   [PARSER]
-      Name        docker
-      Format      json
-      Time_Keep   On
-      Time_Key    time
-      Time_Format %Y-%m-%dT%H:%M:%S.%L
-
-  [PARSER]
       Name        jenkins
       Format      regex
-      Regex       ^(?<time>.*[^\[])\s+\[id=(?<id>\d+)\]\s+(?<level>\w+)\s+(?<message>.*)$
+      Regex       (?<time>.*[^\[])\s+\[id=(?<id>\d+)\]\s+(?<level>\w+)\s+(?<message>.*)
       Time_Key    time
       Time_Format %Y-%m-%d %H:%M:%S.%L
+      Reserve_Data On
+      Preserve_Key On
 
   [PARSER]
       Name        nextcloud
       Format      regex
-      Regex       ^(?<remote>[^ ]*)\s+-\s+-\s+\[(?<time>[^\]]*)\]\s+\\"(?<method>\S+)\s+(?<path>[^\ ]*?)\s+(?<protocol>\S+[^\\])\\"\s+(?<status>\d+)\s+(?<length>\d+)\s+\\"-\\"\s+\\"(?<operation>.+[^\\"])\\".*$
+      Regex       (?<remote>[^ ]*)\s+-\s+-\s+\[(?<time>[^\]]*)\]\s+\"(?<method>\S+)\s+(?<path>\S+)\s+(?<protocol>\S+[^\\])\"\s+(?<status>\d+)\s+(?<length>\d+)\s+\"-\"\s+\"(?<useragentstring>.+[^\"])\".*
       Time_Key    time
       Time_Format %d/%b/%Y:%H:%M:%S %z
+      Reserve_Data On
+      Preserve_Key On
 
   [PARSER]
       Name        sonarqube
       Format      regex
-      Regex       ^(?<time>[\d|\.|\s|:]+) (?<level>\w+)\s+(?<logType>\S+)\[(?<uid>\S+[^\]])]\[(?<message>\S+[^\]])]\s+(?<task>.*[^\|])\|\s+project=(?<project>.*[^\|])\|\s+type=(?<type>\w+[^\|])\|\s+id=(?<id>\S+[^\|])\|\s+submitter=(?<submitter>\S+[^\|])\|\s+status=(?<status>.*[^\|])\|\s+time=(?<duration>\d+ms).*$
+      Regex       (?<time>[\d|\.|\s|:]+) (?<level>\w+)\s+(?<logType>\S+)\[(?<uid>\S+[^\]])](?<message>.*)
       Time_Key    time
       Time_Format %Y.%m.%d %H:%M:%S
-
-  [PARSER]
-      Name        apache
-      Format      regex
-      Regex       ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
-      Time_Key    time
-      Time_Format %d/%b/%Y:%H:%M:%S %z
-
-  [PARSER]
-      Name        apache2
-      Format      regex
-      Regex       ^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
-      Time_Key    time
-      Time_Format %d/%b/%Y:%H:%M:%S %z
-
-  [PARSER]
-      Name        apache_error
-      Format      regex
-      Regex       ^\[[^ ]* (?<time>[^\]]*)\] \[(?<level>[^\]]*)\](?: \[pid (?<pid>[^\]]*)\])?( \[client (?<client>[^\]]*)\])? (?<message>.*)$
-      Time_Key    time
-      Time_Format %d/%b/%Y:%H:%M:%S %z
-
-  [PARSER]
-      Name        nginx
-      Format      regex
-      Regex       ^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$
-      Time_Key    time
-      Time_Format %d/%b/%Y:%H:%M:%S %z
+      Reserve_Data On
+      Preserve_Key On
 
   [PARSER]
       Name        selenium
       Format      regex
-      Regex       ^(?<time>[\d|\.|\s|:]+) (?<level>\w+[^\[])\s+\[(?<type>.*[^\]])]\s+-\s+(?<message>.*)
+      Regex       (?<time>[\d|\.|\s|:]+) (?<level>\w+[^\[])\s+\[(?<type>.*[^\]])]\s+-\s+(?<message>.*)
       Time_Key    time
       Time_Format %H:%M:%S.%z
+      Reserve_Data On
+      Preserve_Key On
 
   [PARSER]
-      Name        syslog
+      Name        ubuntulog
       Format      regex
-      Regex       ^(?<time>[a-zA-Z]{3} \d{1,2} \d{1,2}:\d{1,2}:\d{1,2}) (?<host>[\S]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)\[(?<pid>\d+)]: (?<message>.*)$
+      Regex       (?<time>[a-zA-Z]{3} \d{1,2} \d{1,2}:\d{1,2}:\d{1,2}) (?<host>[\S]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)\[(?<pid>\d+)]: (?<message>.*)
       Time_Key    time
       Time_Format %b %d %H:%M:%S
-
-  [PARSER]
-      Name        json
-      Format      json
-      Time_Key    time
-      Time_Format %d/%b/%Y:%H:%M:%S %z
-
-  [PARSER]
-      Name        syslog-rfc3164
-      Format      regex
-      Regex       ^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
-      Time_Key    time
-      Time_Format %b %d %H:%M:%S
-      Time_Format %Y-%m-%dT%H:%M:%S.%L
-
+      Reserve_Data On
+      Preserve_Key On
 
 inputs: |
   [INPUT]
@@ -95,7 +55,6 @@ inputs: |
       multiline.parser docker, cri
       Tag kube.*
       Mem_Buf_Limit 5MB
-      Skip_Long_Lines On
 
   [INPUT]
       Name systemd
@@ -117,7 +76,7 @@ inputs: |
       name tail
       path /var/log/syslog
       tag logs.local
-      Parser syslog
+      Parser ubuntulog
 
 filters: |
   [FILTER]
@@ -127,6 +86,11 @@ filters: |
       Keep_Log Off
       K8S-Logging.Parser On
       K8S-Logging.Exclude On
+
+  [FILTER]
+      Name modify
+      Match kube.*
+      Rename msg message
 
   [FILTER]
       name modify

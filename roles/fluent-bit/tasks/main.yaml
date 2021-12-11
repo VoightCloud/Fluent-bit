@@ -26,6 +26,9 @@
     chart_ref: fluent/fluent-bit
     release_namespace: "{{ namespace }}"
     release_values:
+      image:
+        tag: "1.8.11"
+        pullPolicy: IfNotPresent
       config:
         inputs: "{{ inputs }}"
         customParsers: "{{ customParsers }}"
@@ -36,4 +39,8 @@
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
 
